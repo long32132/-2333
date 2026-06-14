@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>大话骰子 · 对饮版</title>
+
+  <!-- 微信/社交分享 meta -->
+  <meta name="description" content="玩家 vs 电脑 · 1v1 吹牛拼酒，支持叫骰开盅劈反劈，谁先喝倒谁输！" />
+  <meta property="og:title" content="大话骰子 · 对饮版" />
+  <meta property="og:description" content="玩家 vs 电脑 · 1v1 吹牛拼酒，支持叫骰开盅劈反劈，谁先喝倒谁输！" />
+  <meta property="og:image" content="https://YOUR_USERNAME.github.io/da-hua-tou-zi/share-cover.png" />
+  <meta property="og:url" content="https://YOUR_USERNAME.github.io/da-hua-tou-zi/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="大话骰子" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="大话骰子 · 对饮版" />
+  <meta name="twitter:description" content="1v1 吹牛拼酒，支持叫骰开盅劈反劈！" />
+  <meta name="twitter:image" content="https://YOUR_USERNAME.github.io/da-hua-tou-zi/share-cover.png" />
+
+  <!-- PWA / iOS -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f172a" />
+
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-shape shape-a"></div>
+  <div class="bg-shape shape-b"></div>
+
+  <main class="table-wrap">
+    <header class="title-area">
+      <h1>大话骰子 · 对饮版</h1>
+      <p>玩家 vs 电脑 · 1 为万能</p>
+    </header>
+
+    <section class="arena">
+      <div class="player-side cpu" id="cpuSide">
+        <div class="side-head">
+          <h2>电脑</h2>
+          <span class="status" id="cpuStatus">骰子已遮盖</span>
+        </div>
+        <div class="dice-row" id="cpuDice"></div>
+        <div class="avatar" id="cpuAvatar">
+          <div class="face">😎</div>
+          <div class="cup">🍺</div>
+        </div>
+      </div>
+
+      <div class="center-panel">
+        <div class="current-bid">
+          <span>当前叫点</span>
+          <strong id="currentBid">暂无</strong>
+        </div>
+        <div class="turn-indicator" id="turnIndicator">准备开始</div>
+        <button id="newRoundBtn" class="btn primary">开始新一局</button>
+      </div>
+
+      <div class="player-side human" id="humanSide">
+        <div class="side-head">
+          <h2>你</h2>
+          <span class="status" id="humanStatus">等待中</span>
+        </div>
+        <div class="dice-row" id="humanDice"></div>
+        <div class="avatar" id="humanAvatar">
+          <div class="face">😏</div>
+          <div class="cup">🍺</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="controls" id="controls">
+      <div class="input-group">
+        <label>数量</label>
+        <input id="countInput" type="number" min="1" max="10" value="3" />
+      </div>
+      <div class="input-group">
+        <label>点数</label>
+        <input id="faceInput" type="number" min="1" max="6" value="4" />
+      </div>
+      <button id="bidBtn" class="btn">叫骰</button>
+      <button id="openBtn" class="btn danger">开盅</button>
+      <button id="splitBtn" class="btn warn">劈（2杯）</button>
+      <button id="acceptBtn" class="btn">接受</button>
+      <button id="counterSplitBtn" class="btn danger">反劈（4杯）</button>
+      <button id="declineBtn" class="btn">不接受</button>
+    </section>
+
+    <section class="score-panel">
+      <div>你累计：<strong id="humanCups">0</strong> 杯</div>
+      <div>电脑累计：<strong id="cpuCups">0</strong> 杯</div>
+    </section>
+
+    <section class="log-panel">
+      <h3>现场播报</h3>
+      <div id="log"></div>
+    </section>
+  </main>
+
+  <div class="drunk-overlay" id="drunkOverlay" aria-hidden="true">
+    <div class="drunk-card">
+      <div class="drunk-face">🥴</div>
+      <h3>你喝醉了！</h3>
+      <p id="tauntText">这局有点上头，先缓一缓再战。</p>
+    </div>
+  </div>
+
+  <!-- 微信分享引导 -->
+  <div class="share-tip" id="shareTip">
+    <div class="share-tip-arrow">☝️</div>
+    <span>点击右上角 <strong>···</strong> 分享给朋友</span>
+    <button onclick="document.getElementById('shareTip').remove()">✕</button>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
