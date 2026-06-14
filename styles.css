@@ -242,6 +242,19 @@ body {
   color: #fff;
 }
 
+.btn.zhai-btn {
+  background: #475569;
+  color: #e2e8f0;
+  min-width: 64px;
+  transition: background 0.2s, color 0.2s, box-shadow 0.2s;
+}
+
+.btn.zhai-btn.active {
+  background: #f59e0b;
+  color: #111827;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.5);
+}
+
 .btn:disabled {
   opacity: 0.5;
   cursor: not-allowed;

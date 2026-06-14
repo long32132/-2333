@@ -10,6 +10,7 @@ const state = {
   cpuCups: 0,
   challenge: null,
   maxStake: 4,
+  bidType: 'buzhai',
 };
 
 const el = {
@@ -35,6 +36,7 @@ const el = {
   cpuCups: document.getElementById("cpuCups"),
   drunkOverlay: document.getElementById("drunkOverlay"),
   tauntText: document.getElementById("tauntText"),
+  zhaiToggle: document.getElementById("zhaiToggle"),
 };
 
 function rollDice() {
@@ -85,17 +87,30 @@ function renderDice(container, dice, hidden = false) {
 
 function bidToText(bid) {
   if (!bid) return "暂无";
-  return `${bid.count}个${bid.face}`;
+  const typeLabel = bid.type === 'zhai' ? '斋' : '';
+  return `${bid.count}个${typeLabel}${bid.face}`;
 }
 
 function isHigherBid(newBid, oldBid) {
   if (!oldBid) return true;
+  const faceRank = { 1: 6, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5 };
+  const typeRank = { buzhai: 1, zhai: 0 };
+
+  // 斋 → 不斋：必须 +2 数量
+  if (oldBid.type === 'zhai' && newBid.type === 'buzhai') {
+    if (newBid.count >= oldBid.count + 2) return true;
+    return false;
+  }
+
+  // 同类型 / 不斋→斋
   if (newBid.count !== oldBid.count) return newBid.count > oldBid.count;
-  return newBid.face > oldBid.face;
+  if (faceRank[newBid.face] !== faceRank[oldBid.face]) return faceRank[newBid.face] > faceRank[oldBid.face];
+  return typeRank[newBid.type] > typeRank[oldBid.type];
 }
 
-function countWithWild(face) {
+function countWithWild(face, type = 'buzhai') {
   const all = [...state.humanDice, ...state.cpuDice];
+  if (type === 'zhai') return all.filter((d) => d === face).length;
   return all.filter((d) => d === face || d === 1).length;
 }
 
@@ -117,6 +132,7 @@ function setTurn(turn) {
     el.acceptBtn.disabled = true;
     el.counterSplitBtn.disabled = true;
     el.declineBtn.disabled = true;
+    if (el.zhaiToggle) el.zhaiToggle.disabled = !!state.currentBid;
   } else {
     el.turnIndicator.textContent = "电脑回合";
     el.humanStatus.textContent = "等待中";
@@ -127,6 +143,7 @@ function setTurn(turn) {
     el.acceptBtn.disabled = true;
     el.counterSplitBtn.disabled = true;
     el.declineBtn.disabled = true;
+    if (el.zhaiToggle) el.zhaiToggle.disabled = true;
   }
 }
 
@@ -137,6 +154,7 @@ function setChallengeUIForHuman() {
   el.acceptBtn.disabled = false;
   el.declineBtn.disabled = false;
   el.counterSplitBtn.disabled = state.challenge && state.challenge.level >= 2;
+  if (el.zhaiToggle) el.zhaiToggle.disabled = true;
 }
 
 function updateCupBoard() {
@@ -150,6 +168,11 @@ function startRound() {
   state.currentBid = null;
   state.roundActive = true;
   state.challenge = null;
+  state.bidType = 'buzhai';
+  if (el.zhaiToggle) {
+    el.zhaiToggle.textContent = '不斋';
+    el.zhaiToggle.classList.remove('active');
+  }
 
   renderDice(el.humanDice, state.humanDice, false);
   renderDice(el.cpuDice, state.cpuDice, true);
@@ -194,8 +217,10 @@ function addCups(player, cups) {
 function settleByBid(opener, stake) {
   if (!state.currentBid) return;
   renderDice(el.cpuDice, state.cpuDice, false);
-  const actual = countWithWild(state.currentBid.face);
-  addLog(`开盅！当前叫点 ${bidToText(state.currentBid)}，实际有 ${actual} 个（1万能）。`);
+  const bid = state.currentBid;
+  const actual = countWithWild(bid.face, bid.type);
+  const modeLabel = bid.type === 'zhai' ? '（斋，1不算万能）' : '（不斋，1万能）';
+  addLog(`开盅！当前叫点 ${bidToText(bid)}${modeLabel}，实际有 ${actual} 个。`);
 
   const lastBidder = opener === "human" ? "cpu" : "human";
   if (actual >= state.currentBid.count) {
@@ -244,9 +269,12 @@ function humanBid() {
     return;
   }
 
-  const bid = { count, face };
+  const bid = { count, face, type: state.bidType || 'buzhai' };
   if (!isHigherBid(bid, state.currentBid)) {
-    addLog("叫点必须比当前更大。")
+    const hint = state.currentBid && state.currentBid.type === 'zhai' && (state.bidType || 'buzhai') === 'buzhai'
+      ? '斋→不斋需要 +2 数量。'
+      : '叫点必须比当前更大。';
+    addLog(hint)
     return;
   }
 
@@ -289,7 +317,8 @@ function cpuAction() {
   }
 
   const targetFace = state.currentBid ? state.currentBid.face : (Math.floor(Math.random() * 6) + 1);
-  const confidence = countWithWild(targetFace);
+  const bidType = state.currentBid ? state.currentBid.type : 'buzhai';
+  const confidence = countWithWild(targetFace, bidType);
 
   if (state.currentBid && confidence + Math.floor(Math.random() * 2) < state.currentBid.count) {
     addLog("电脑选择开盅！")
@@ -299,10 +328,15 @@ function cpuAction() {
 
   let nextBid;
   if (!state.currentBid) {
-    nextBid = { count: 2 + Math.floor(Math.random() * 2), face: targetFace };
+    const useZhai = Math.random() < 0.3;
+    nextBid = { count: 2 + Math.floor(Math.random() * 2), face: targetFace, type: useZhai ? 'zhai' : 'buzhai' };
   } else {
     nextBid = { ...state.currentBid };
-    if (Math.random() < 0.65) {
+    // 斋→不斋：+2 跳
+    if (nextBid.type === 'zhai' && Math.random() < 0.35) {
+      nextBid.type = 'buzhai';
+      nextBid.count += 2;
+    } else if (Math.random() < 0.6) {
       nextBid.count += 1;
     } else if (nextBid.face < 6) {
       nextBid.face += 1;
@@ -313,7 +347,7 @@ function cpuAction() {
   }
 
   if (!isHigherBid(nextBid, state.currentBid)) {
-    nextBid = { count: state.currentBid.count + 1, face: state.currentBid.face };
+    nextBid = { count: state.currentBid.count + 1, face: state.currentBid.face, type: state.currentBid.type };
   }
 
   state.currentBid = nextBid;
@@ -378,6 +412,20 @@ el.splitBtn.addEventListener("click", humanSplit);
 el.acceptBtn.addEventListener("click", humanAccept);
 el.declineBtn.addEventListener("click", humanDecline);
 el.counterSplitBtn.addEventListener("click", humanCounterSplit);
+
+function toggleZhai() {
+  if (!state.roundActive || state.turn !== 'human' || state.currentBid) {
+    // 只能在轮到玩家且没有当前叫点时切换首叫类型
+    if (state.currentBid) return;
+    if (!state.roundActive || state.turn !== 'human') return;
+  }
+  state.bidType = state.bidType === 'zhai' ? 'buzhai' : 'zhai';
+  el.zhaiToggle.textContent = state.bidType === 'zhai' ? '斋' : '不斋';
+  el.zhaiToggle.classList.toggle('active', state.bidType === 'zhai');
+}
+if (el.zhaiToggle) {
+  el.zhaiToggle.addEventListener("click", toggleZhai);
+}
 
 el.bidBtn.disabled = true;
 el.openBtn.disabled = true;
