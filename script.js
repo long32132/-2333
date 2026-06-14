@@ -302,7 +302,7 @@ function cpuAction() {
       }
       if (r < 0.55) {
         addLog("电脑接受劈，直接开盅判定（2杯）。")
-        settleByBid("cpu", 2);
+        settleByBid(state.challenge.from, 2);
         return;
       }
       addLog("电脑选择反劈！本局升级到 4 杯。")
@@ -312,7 +312,7 @@ function cpuAction() {
     }
 
     addLog("电脑面对反劈，选择接受，直接开盅判定（4杯）。")
-    settleByBid("cpu", 4);
+    settleByBid(state.challenge.from, 4);
     return;
   }
 
@@ -374,11 +374,11 @@ function humanAccept() {
   if (!state.roundActive || !state.challenge || state.challenge.target !== "human") return;
   if (state.challenge.level === 1) {
     addLog("你接受劈，直接开盅判定（2杯）。")
-    settleByBid("human", 2);
+    settleByBid(state.challenge.from, 2);
     return;
   }
   addLog("你接受反劈，直接开盅判定（4杯）。")
-  settleByBid("human", 4);
+  settleByBid(state.challenge.from, 4);
 }
 
 function humanDecline() {
